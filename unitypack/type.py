@@ -152,7 +152,7 @@ class TypeMetadata:
 		else:
 			if format == 6:
 				buf.seek(self.asset.file_size - self.asset.metadata_size + 1)
-			
+
 			num_fields = buf.read_int()
 			for i in range(num_fields):
 				class_id = buf.read_int()

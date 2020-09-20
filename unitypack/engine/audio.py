@@ -44,7 +44,7 @@ class AudioClip(Object):
 	@property
 	def data(self):
 		# if version == 6:
-		#self._data = 
+		#self._data =
 		#if not hasattr(self, "_data"):
 		#	self._data = self.resource.get_data()
 		return self._data

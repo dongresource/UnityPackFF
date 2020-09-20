@@ -147,140 +147,140 @@ class CompressedMeshData:
 		self.uv3 = []
 		self.uv4 = []
 		self.tangents = []
-		
+
 		self.extract_mesh()
-	
+
 	class BitReader:
 		def __init__(self, buf, size):
 			self.buf = buf
 			self.size = size
-	
+
 			self.bitcount = 8
 			self.i = 0
 			self.byte = self.nextbyte()
-	
+
 		def nextbyte(self):
 			if self.i >= len(self.buf):
 				return 0
 			b = self.buf[self.i]
 			self.i += 1
 			return b
-	
+
 		def read(self):
 			if self.size == 8 and self.bitcount == 0:
 				return self.nextbyte()
-			
+
 			while self.bitcount < self.size:
 				newbyte = self.nextbyte()
 				# XXX: not sure why disunity has a special case for -1 here
 				self.byte |= newbyte << self.bitcount
 				self.bitcount += 8
-	
+
 			ret = self.byte & ((1 << self.size) - 1)
 			self.byte >>= self.size
 			self.bitcount -= self.size
 			return ret
-	
-	
+
+
 	def read_bits(self, pbv):
 		if pbv['m_NumItems'] == 0 or pbv['m_BitSize'] == 0:
 			return []
-	
+
 		reader = self.BitReader(pbv['m_Data'], pbv['m_BitSize'])
-	
+
 		ret = []
 		for i in range(pbv['m_NumItems']):
 			ret.append(reader.read())
-	
+
 		return ret
-	
+
 	def read_floats(self, pbv):
 		if pbv['m_NumItems'] == 0 or pbv['m_BitSize'] == 0:
 			return []
-	
+
 		items = self.read_bits(pbv)
 		maxvalue = (1 << pbv['m_BitSize']) - 1
 		_range = pbv['m_Range'] / maxvalue
-	
+
 		floats = []
 		for i in range(len(items)):
 			floats.append(float(items[i] * _range + pbv['m_Start']))
-	
+
 		return floats
-	
+
 	def read_normals(self, normals, normal_signs):
 		items = self.read_bits(normals)
 		signs = self.read_bits(normal_signs)
-	
+
 		if len(items) == 0 or len(signs) == 0:
 			return []
-	
+
 		for i in range(len(signs)):
 			if signs[i] == 0:
 				signs[i] = -1
-	
+
 		maxvalue = (1 << normals['m_BitSize']) - 1
 		_range = normals['m_Range'] / maxvalue
-	
+
 		floats = dict()
 		for i in range(len(signs)):
 			x = items[i * 2] * _range + normals['m_Start']
 			y = items[i * 2 + 1] * _range + normals['m_Start']
 			z = ((1 - x**2 - y**2) * signs[i])
-	
+
 			floats[i * 3] = x
 			floats[i * 3 + 1] = y
 			floats[i * 3 + 2] = z
-	
+
 		return list(floats.values())
-	
+
 	def extract_mesh(self):
 		cmesh = self.mesh._obj['m_CompressedMesh']
 
 		vertex_floats = self.read_floats(cmesh['m_Vertices'])
 		for i in range(0, len(vertex_floats), 3):
 			self.vertices.append(OBJVector3(vertex_floats[i], vertex_floats[i+1], vertex_floats[i+2]))
-	
+
 		normal_floats = self.read_normals(cmesh['m_Normals'], cmesh['m_NormalSigns'])
 		for i in range(0, len(normal_floats), 3):
 			self.normals.append(OBJVector3(normal_floats[i], normal_floats[i+1], normal_floats[i+2]))
-	
+
 		uv_floats = self.read_floats(cmesh['m_UV'])
 		for i in range(0, len(uv_floats), 2):
 			self.uv1.append(OBJVector2(uv_floats[i], 1-uv_floats[i+1]))
-		
+
 		triangle_ints = self.read_bits(cmesh['m_Triangles'])
 		if len(triangle_ints) % 3 == 2:
 			triangle_ints.append(triangle_ints[-1])
 		elif len(triangle_ints) % 3 == 1:
 			triangle_ints.append(triangle_ints[-1])
 			triangle_ints.append(triangle_ints[-2])
-			
+
 		self.triangles.append(triangle_ints)
 		self.indices.append(triangle_ints)
-		
+
 		if len(self.mesh._obj['m_SubMeshes']) > 0:
 			if self.mesh._obj['m_SubMeshes'][0]._obj['isTriStrip'] > 0:
 				self.handle_strip_topology()
-	
+
 	def handle_strip_topology(self):
 		tris = []
-		
+
 		for i in range(len(self.indices[0])):
 			tris.append(self.indices[0][i])
-			
+
 			if len(tris) < 3:
 				continue
-			
+
 			t1 = tris[0]
 			t2 = tris[1]
 			t3 = tris[2]
-	
+
 			del tris[0]
-	
+
 			if t1 == t2 or t1 == t3 or t2 == t3:
 				continue
-	
+
 			if i % 2 == 0:
 				self.triangles[0].append(t1)
 				self.triangles[0].append(t2)

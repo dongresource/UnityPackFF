@@ -12,6 +12,7 @@ class TextureFormat(IntEnum):
 
 	# Direct3D
 	DXT1 = 10
+	DXT3 = 11 # ?
 	DXT5 = 12
 
 	RGBA4444 = 13
@@ -89,6 +90,7 @@ IMPLEMENTED_FORMATS = (
 	TextureFormat.ARGB32,
 	TextureFormat.DXT1,
 	TextureFormat.DXT1Crunched,
+	TextureFormat.DXT3,
 	TextureFormat.DXT5,
 	TextureFormat.DXT5Crunched,
 	TextureFormat.BC7,
@@ -163,6 +165,9 @@ class Texture2D(Texture):
 		if self.format in (TextureFormat.DXT1, TextureFormat.DXT1Crunched):
 			codec = "bcn"
 			args = (1, )
+		elif self.format == TextureFormat.DXT3:
+			codec = "bcn"
+			args = (2, )
 		elif self.format in (TextureFormat.DXT5, TextureFormat.DXT5Crunched):
 			codec = "bcn"
 			args = (3, )

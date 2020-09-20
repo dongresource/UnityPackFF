@@ -39,11 +39,14 @@ class AudioClip(Object):
 	preload_audio_data = field("m_PreloadAudioData")
 	subsound_index = field("m_SubsoundIndex")
 	resource = field("m_Resource")
+	audio_data = field("audio data")
 
 	@property
 	def data(self):
-		if not hasattr(self, "_data"):
-			self._data = self.resource.get_data()
+		# if version == 6:
+		#self._data = 
+		#if not hasattr(self, "_data"):
+		#	self._data = self.resource.get_data()
 		return self._data
 
 

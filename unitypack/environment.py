@@ -51,6 +51,7 @@ class UnityEnvironment:
 				self.populate_assets()
 				if name not in self.assets:
 					raise KeyError("No such asset: %r" % (name))
+					#print('WARNING: failed to open asset: %r' % (name))
 		return self.assets[name]
 
 	def populate_assets(self):
@@ -83,3 +84,4 @@ class UnityEnvironment:
 			if asset.name.lower() == name:
 				return asset
 		raise KeyError("No such asset: %r" % (name))
+		#print('WARNING: failed to open asset: %r' % (name))

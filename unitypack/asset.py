@@ -105,6 +105,8 @@ class Asset:
 			self.endianness = buf.read_uint()
 			if self.endianness == 0:
 				buf.endian = "<"
+		elif self.format == 6:
+			buf.endian = '<'
 
 		self.tree.load(buf)
 

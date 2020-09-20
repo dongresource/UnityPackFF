@@ -112,8 +112,11 @@ class TypeMetadata:
 	def load(self, buf, format=None):
 		if format is None:
 			format = self.asset.format
-		self.generator_version = buf.read_string()
-		self.target_platform = RuntimePlatform(buf.read_uint())
+		if format > 6:
+			self.generator_version = buf.read_string()
+			self.target_platform = RuntimePlatform(buf.read_uint())
+		else:
+			self.target_platform = RuntimePlatform.WindowsWebPlayer
 
 		if format >= 13:
 			has_type_trees = buf.read_boolean()
@@ -147,6 +150,9 @@ class TypeMetadata:
 					self.type_trees[class_id] = tree
 
 		else:
+			if format == 6:
+				buf.seek(self.asset.file_size - self.asset.metadata_size + 1)
+			
 			num_fields = buf.read_int()
 			for i in range(num_fields):
 				class_id = buf.read_int()

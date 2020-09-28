@@ -7,6 +7,19 @@ from .type import TypeMetadata, TypeTree
 from .utils import BinaryReader
 
 
+class FFOrderedDict(OrderedDict):
+	def __init__(self, offset):
+		self.offset = offset
+		self.memboffsets = dict()
+
+		OrderedDict.__init__(self)
+
+	def setmemboffset(self, name, offset):
+		self.memboffsets[name] = offset
+	
+	def getmemboffset(self, name):
+		return self.memboffsets[name]
+
 def load_object(type, obj):
 	clsname = type.type
 	if hasattr(UnityEngine, clsname):
@@ -143,9 +156,10 @@ class ObjectInfo:
 				second = self.read_value(type.children[1], buf)
 				result = (first, second)
 			else:
-				result = OrderedDict()
+				result = FFOrderedDict(buf.tell() + self.asset._buf_ofs + self.data_offset)
 
 				for child in type.children:
+					result.setmemboffset(child.name, buf.tell() + self.asset._buf_ofs + self.data_offset)
 					result[child.name] = self.read_value(child, buf)
 
 				result = load_object(type, result)

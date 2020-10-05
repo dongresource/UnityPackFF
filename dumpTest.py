@@ -23,15 +23,12 @@ for filename in glob.glob('/tmp/DongResources_12_09.resourceFile_unpacked/Custom
     pixles = []
     #k = 0
     for height in terrainData['m_Heightmap']['m_Heights']:
-        #x = k % terrainData['m_Heightmap']['m_Width']
-        #y = k // terrainData['m_Heightmap']['m_Width']
-        #intensity = height / MAX_HEIGHT
-        #pix = int(intensity * 255)
-        pix = int((height * 255) / MAX_HEIGHT)
-        pixles.append((pix, pix, pix))
+        #pix = int((height * 255) / MAX_HEIGHT)
+        #pixles.append((pix, pix, pix))
+        pixles.append(height)
 
-    img = Image.new("RGB", (terrainData['m_Heightmap']['m_Width'], terrainData['m_Heightmap']['m_Height']))
+    img = Image.new("I", (terrainData['m_Heightmap']['m_Width'], terrainData['m_Heightmap']['m_Height']))
     img.putdata(pixles)
     #img = img.resize((512,512))
     print(filename.split('.')[0])
-    img.save(filename.split('.')[0] + ".tga")
+    img.save(filename.split('.')[0] + ".png")

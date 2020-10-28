@@ -51,6 +51,34 @@ class OBJVector4(OBJVector3):
 		return "%s %s %s %s" % (self.x, self.y, self.z, self.w)
 
 
+def handle_strip_topology(mesh):
+	tris = []
+
+	for i in range(len(mesh.indices[0])):
+		tris.append(mesh.indices[0][i])
+
+		if len(tris) < 3:
+			continue
+
+		t1 = tris[0]
+		t2 = tris[1]
+		t3 = tris[2]
+
+		del tris[0]
+
+		if t1 == t2 or t1 == t3 or t2 == t3:
+			continue
+
+		if i % 2 == 0:
+			mesh.triangles[0].append(t1)
+			mesh.triangles[0].append(t2)
+			mesh.triangles[0].append(t3)
+		else:
+			mesh.triangles[0].append(t3)
+			mesh.triangles[0].append(t2)
+			mesh.triangles[0].append(t1)
+
+
 class MeshData:
 	def __init__(self, mesh):
 		self.mesh = mesh
@@ -64,8 +92,28 @@ class MeshData:
 		self.uv3 = []
 		self.uv4 = []
 		self.tangents = []
+
 		self.extract_indices()
-		self.extract_vertices()
+		self.simple_extract_vertices()
+
+		if len(self.mesh._obj['m_SubMeshes']) > 0:
+			if self.mesh._obj['m_SubMeshes'][0]._obj['isTriStrip'] > 0:
+				handle_strip_topology(self)
+
+		#if mesh.asset.format == 6:
+		#	self.simple_extract_vertices()
+		#else:
+		#	self.extract_vertices()
+
+	def simple_extract_vertices(self):
+		for v in self.mesh._obj['m_Vertices']:
+			self.vertices.append(OBJVector3(v['x'], v['y'], v['z']))
+
+		for v in self.mesh._obj['m_Normals']:
+			self.normals.append(OBJVector3(v['x'], v['y'], v['z']))
+
+		for v in self.mesh._obj['m_UV']:
+			self.uv1.append(OBJVector2(v['x'], 1-v['y']))
 
 	def extract_indices(self):
 		for sub in self.mesh.submeshes:
@@ -73,12 +121,12 @@ class MeshData:
 			sub_triangles = []
 			buf = BinaryReader(BytesIO(self.mesh.index_buffer))
 			buf.seek(sub.first_byte)
+
 			for i in range(0, sub.index_count):
 				sub_indices.append(buf.read_uint16())
-			if not sub.topology:
+
+			if sub._obj['isTriStrip'] == 0:
 				sub_triangles.extend(sub_indices)
-			else:
-				raise NotImplementedError("(%s) topologies are not supported" % (self.mesh.name))
 
 			self.indices.append(sub_indices)
 			self.triangles.append(sub_triangles)
@@ -261,34 +309,7 @@ class CompressedMeshData:
 
 		if len(self.mesh._obj['m_SubMeshes']) > 0:
 			if self.mesh._obj['m_SubMeshes'][0]._obj['isTriStrip'] > 0:
-				self.handle_strip_topology()
-
-	def handle_strip_topology(self):
-		tris = []
-
-		for i in range(len(self.indices[0])):
-			tris.append(self.indices[0][i])
-
-			if len(tris) < 3:
-				continue
-
-			t1 = tris[0]
-			t2 = tris[1]
-			t3 = tris[2]
-
-			del tris[0]
-
-			if t1 == t2 or t1 == t3 or t2 == t3:
-				continue
-
-			if i % 2 == 0:
-				self.triangles[0].append(t1)
-				self.triangles[0].append(t2)
-				self.triangles[0].append(t3)
-			else:
-				self.triangles[0].append(t3)
-				self.triangles[0].append(t2)
-				self.triangles[0].append(t1)
+				handle_strip_topology(self)
 
 
 class OBJMesh:
@@ -322,6 +343,12 @@ class OBJMesh:
 		tex_coords = self.mesh_data.uv1
 		if not tex_coords:
 			tex_coords = self.mesh_data.uv2
+
+		# for debugging purposes
+		if self.mesh.mesh_compression:
+			ret.append('# from compressed mesh\n\n')
+		else:
+			ret.append('# from uncompressed mesh\n\n')
 
 		for v in self.mesh_data.vertices:
 			ret.append("v %s\n" % (v))

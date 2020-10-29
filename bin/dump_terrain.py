@@ -34,5 +34,5 @@ def main(filename, outpath):
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        sys.exit('usage: dumpTerrain.py assetbundle out.png')
+        sys.exit('usage: dump_terrain.py assetbundle out.png')
     main(sys.argv[1], sys.argv[2])

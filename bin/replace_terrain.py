@@ -29,7 +29,7 @@ def main(imgpath, offset, output):
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        print('''usage: replaceTerrain.py input.png offset OutputAssetBundle
+        print('''usage: replace_terrain.py input.png offset OutputAssetBundle
 
 NOTE: OutputAssetBundle will be modified in-place, starting from the supplied offset.
 It will not check if the offset is correct nor will it make a backup of the asset bundle first.''', file=sys.stderr)

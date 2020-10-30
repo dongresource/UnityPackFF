@@ -40,19 +40,36 @@ class UnityEnvironment:
 					self.load(f)
 
 	def get_asset_by_filename(self, name):
-		if name not in self.assets:
-			path = os.path.join(self.base_path, name)
-			if os.path.exists(path):
-				f = open(path, "rb")
-				self.files.append(f)
-				self.assets[name] = Asset.from_file(f)
-			else:
-				self.discover(name)
-				self.populate_assets()
-				if name not in self.assets:
-					raise KeyError("No such asset: %r" % (name))
-					#print('WARNING: failed to open asset: %r' % (name))
-		return self.assets[name]
+		short = os.path.basename(name).lower()
+		if short in self.assets:
+			return self.assets[short]
+
+		path = os.path.join(self.base_path, name)
+		if os.path.exists(path):
+			f = open(path, "rb")
+			self.files.append(f)
+			self.assets[short] = Asset.from_file(f, environment=self)
+			return self.assets[short]
+
+		# recurse one directory deep and search in there
+		for d in os.listdir(self.base_path):
+			if not os.path.isdir(os.path.join(self.base_path, d)):
+				continue
+
+			for ent in os.listdir(os.path.join(self.base_path, d)):
+				if ent.lower() == name.lower():
+					f = open(os.path.join(self.base_path, d, ent), "rb")
+					self.files.append(f)
+					self.assets[short] = Asset.from_file(f, environment=self)
+					return self.assets[short]
+
+		self.discover(name)
+		self.populate_assets()
+		if short in self.assets:
+			return self.assets[short]
+
+		raise KeyError("No such asset: %r" % (name))
+		#print('WARNING: failed to open asset: %r' % (name))
 
 	def populate_assets(self):
 		for bundle in self.bundles.values():

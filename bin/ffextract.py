@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-# first do: cat full_listing.txt | while read line; do mkdir -p "`dirname "$line"`"; done
-# or: cat full_listing.txt | while read line; do
-#		echo "`dirname "$line"`"
-#	done | sort | uniq | while read line; do
-#		mkdir -p "$line"
-#	done
-# FIXME: remove unnecessary mkdirs
-
 # TODO:
 #   - option to only extract given files
 #   - automatically link textures/materials to models
@@ -118,10 +110,11 @@ class GameobjectSearch:
 #		gameobject_recurse(obj.resolve(), srch)
 
 def gameobject_recurse(obj, srch):
+	# NOTE: uncomment if re-enabling MeshFilter to...
 	# limit the number of meshes per object to 2 for now; to work around
 	# the problem of countless garbage meshes being ripped
-	if len(srch.meshes) >= 2:
-		return
+	#if len(srch.meshes) >= 2:
+	#	return
 
 	#print('recursing into', obj, 'type', type(obj))
 	if isinstance(obj, ObjectPointer) and obj.object not in srch.seen:
@@ -134,9 +127,9 @@ def gameobject_recurse(obj, srch):
 				srch.meshes.append(d['m_Mesh'].resolve())
 			return
 		elif obj.object.type == 'MeshFilter':
-			d = obj.resolve()._obj
-			if d['m_Mesh'] is not None:
-				srch.meshes.append(d['m_Mesh'].resolve())
+			#d = obj.resolve()._obj
+			#if d['m_Mesh'] is not None:
+			#	srch.meshes.append(d['m_Mesh'].resolve())
 			return
 
 		srch.seen.add(obj.object)
@@ -235,10 +228,7 @@ def handle_assetbundle(asset, outdir):
 
 	cont = asset.objects[1].read()['m_Container']
 	for path, mtdt in cont:
-		#makepath(os.path.join(outdir, os.path.dirname(path)))
-		if '/' in path and not os.path.exists(os.path.dirname(path)):
-			print('output dir "{}" doesn\'t exist.\nremember to mkdir -p all paths.'.format(os.path.dirname(path)))
-			sys.exit(1)
+		os.makedirs(os.path.join(outdir, os.path.dirname(path)), mode=0o755, exist_ok=True)
 
 		outname = fixext(os.path.basename(path))
 		outpath = os.path.join(outdir, os.path.dirname(path), outname)
@@ -259,8 +249,16 @@ def handle_assetbundle(asset, outdir):
 def main(path, outdir):
 	environment.base_path = path
 
-	for cas in os.listdir(path):
-		if not (cas.lower().startswith('customassetbundle') or cas.lower().startswith('buildplayer')):
+	files = os.listdir(path)
+	for ent in os.listdir(path):
+		abspath = os.path.join(path, ent)
+		if os.path.isdir(abspath):
+			files.remove(ent)
+			files.extend([os.path.join(ent, f) for f in os.listdir(abspath)])
+
+	for cas in files:
+		name = os.path.basename(cas).lower()
+		if not (name.startswith('customassetbundle') or name.startswith('buildplayer')):
 			continue
 
 		# TODO: apply heuristics?
@@ -268,7 +266,7 @@ def main(path, outdir):
 		#	for f in environment.files[:32]:
 		#		f.close()
 
-		print('* opening', cas)
+		print('* opening', name)
 		print('* {} assetbundles open'.format(len(environment.files)))
 		try:
 			asset = environment.get_asset_by_filename(cas)
@@ -279,6 +277,7 @@ def main(path, outdir):
 				break
 			print('* error while handling assetbundle {}'.format(cas))
 			traceback.print_exc(file=sys.stdout)
+
 
 if __name__ == '__main__':
 	if len(sys.argv) != 3:

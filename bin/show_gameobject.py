@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 from collections import OrderedDict
 from unitypack.asset import Asset
@@ -98,8 +99,10 @@ def fun(obj, depth):
 			#print('checking dict item', k)
 			fun(v, depth)
 
-def main(f, name):
+def main(f, name, base=None):
 	asset = Asset.from_file(f)
+	if base is not None:
+		asset.environment.base_path = base
 
 	depth = 0
 	container = asset.objects[1].read()['m_Container']
@@ -110,11 +113,12 @@ def main(f, name):
 			seen.append(gameobject)
 			fun(gameobject.read(), 1)
 
-			i = 0
-			for mesh in meshes:
-				with open('/tmp/mesh{}.obj'.format(i), 'w') as f:
-					f.write(OBJMesh(mesh).export())
-				i += 1
+                        # commented out for the Windows users' benefit
+			#i = 0
+			#for mesh in meshes:
+			#	with open('/tmp/mesh{}.obj'.format(i), 'w') as f:
+			#		f.write(OBJMesh(mesh).export())
+			#	i += 1
 
 			print('\n{} meshes\n{} texutres\n{} materials'.format(meshes, textures, materials))
 			return
@@ -123,4 +127,9 @@ def main(f, name):
 
 if __name__ == '__main__':
 	with open(sys.argv[1], 'rb') as f:
-		main(f, sys.argv[2])
+		if len(sys.argv) == 3:
+			main(f, sys.argv[2])
+		elif len(sys.argv) > 3:
+			main(f, sys.argv[2], sys.argv[3])
+		else:
+			sys.exit('usage: show_gameobject.py assetbundle gameobject [assets]')

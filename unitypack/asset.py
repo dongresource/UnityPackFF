@@ -53,7 +53,8 @@ class Asset:
 		base_path = os.path.abspath(os.path.dirname(file.name))
 		if environment is None:
 			from .environment import UnityEnvironment
-			ret.environment = UnityEnvironment(base_path=base_path)
+			environment = UnityEnvironment(base_path=base_path)
+		ret.environment = environment
 		return ret
 
 	def get_asset(self, path):

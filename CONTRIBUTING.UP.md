@@ -1,3 +1,6 @@
+Note: These instructions are for upstream UnityPack.
+They're good, but they might not strictly apply here.
+
 ### Coding style
 
 This project follows the [HearthSim Styleguide](https://hearthsim.info/styleguide/).

@@ -14,7 +14,7 @@ Please take the time to figure out how to accomplish what you want yourself if y
 This project was forked from commit `d9ce99fa` of UnityPack.
 The upstream readme has been renamed to [README.UP.md](README.UP.md).
 
-It currently supports working with all pre-Academy asset bundles from the original game, as well as all asset bundles from FusionFall Retro with the sole exception of TableData.
+It currently supports working with all asset bundles from the original game, as well as all asset bundles from FusionFall Retro with the sole exception of TableData.
 
 Note that this repository is a loose collection of patches and scripts I had originally written for my own use and have only slightly cleaned up before publishing.
 Do read the scripts in `bin` before executing them to make sure you understand what they do.
@@ -273,7 +273,7 @@ These scripts were prototypes I wrote while figuring out the asset bundle and co
 Their logic is already in the library as of my first commit to this project (`7ca8bcb5`).
 Both were written with reference to the source code of older versions of Disunity.
 
-They might be of use to anyone trying to implement support for Academy assets; generation of new FF-compatible asset bundles or modification of existing ones.
+They might be of use to anyone trying to implement generation of new FF-compatible asset bundles or modification of existing ones.
 
 `proto_extract.py` only loads the asset bundle's type tree so it's browsable interactively if the script is `import`ed or run with `ipython`'s `%run` command.
 It does not decode the asset objects themselves.

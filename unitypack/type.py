@@ -112,7 +112,7 @@ class TypeMetadata:
 	def load(self, buf, format=None):
 		if format is None:
 			format = self.asset.format
-		if format > 6:
+		if format > 7:
 			self.generator_version = buf.read_string()
 			self.target_platform = RuntimePlatform(buf.read_uint())
 		else:
@@ -150,7 +150,7 @@ class TypeMetadata:
 					self.type_trees[class_id] = tree
 
 		else:
-			if format == 6:
+			if format == 6 or format == 7:
 				buf.seek(self.asset.file_size - self.asset.metadata_size + 1)
 
 			num_fields = buf.read_int()

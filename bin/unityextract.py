@@ -96,7 +96,7 @@ class UnityExtract:
 			return
 
 		if obj.type == "AudioClip":
-			if asset.format == 6:
+			if asset.format == 6 or asset.format == 7:
 				self.write_to_file(d.name + ".ogg", d.audio_data, mode="wb")
 			else:
 				samples = extract_audioclip_samples(d)

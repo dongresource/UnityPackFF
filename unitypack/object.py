@@ -86,7 +86,10 @@ class ObjectInfo:
 
 	def read_id(self, buf):
 		if self.asset.long_object_ids:
-			return buf.read_int64()
+			# read 8 bytes, but only use the first 4
+			first = buf.read_uint()
+			second = buf.read_uint()
+			return first
 		else:
 			return self.asset.read_id(buf)
 
@@ -202,10 +205,19 @@ class ObjectPointer:
 	def asset(self):
 		from .asset import AssetRef
 
-		ret = self.source_asset.asset_refs[self.file_id]
-		if isinstance(ret, AssetRef):
-			ret = ret.resolve()
-		return ret
+		if self.source_asset.format == 7:
+			for ref in self.source_asset.asset_refs:
+				asset = ref.resolve() if isinstance(ref, AssetRef) else ref
+
+				if self.path_id in asset.objects.keys():
+					return asset
+
+			raise KeyError('path_id {} not found in asset_refs'.format(self.path_id))
+		else:
+			ret = self.source_asset.asset_refs[self.file_id]
+			if isinstance(ret, AssetRef):
+				ret = ret.resolve()
+			return ret
 
 	@property
 	def object(self):
@@ -213,7 +225,10 @@ class ObjectPointer:
 
 	def load(self, buf):
 		self.file_id = buf.read_int()
-		self.path_id = self.source_asset.read_id(buf)
+		if self.source_asset.format == 7:
+			self.path_id = buf.read_uint()
+		else:
+			self.path_id = self.source_asset.read_id(buf)
 
 	def resolve(self):
 		return self.object.read()

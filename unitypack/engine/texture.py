@@ -157,10 +157,13 @@ class Texture2D(Texture):
 	@property
 	def image(self):
 		from PIL import Image
-		from decrunch import File as CrunchFile
+		#from decrunch import File as CrunchFile
 
 		if self.format not in IMPLEMENTED_FORMATS:
 			raise NotImplementedError("Unimplemented format %r" % (self.format))
+
+		if self.format in (TextureFormat.DXT1Crunched, TextureFormat.DXT5Crunched):
+			raise NotImplementedError("Support for crunched formats has been disabled.")
 
 		if self.format in (TextureFormat.DXT1, TextureFormat.DXT1Crunched):
 			codec = "bcn"
@@ -182,8 +185,8 @@ class Texture2D(Texture):
 		size = (self.width, self.height)
 
 		data = self.image_data
-		if self.format in (TextureFormat.DXT1Crunched, TextureFormat.DXT5Crunched):
-			data = CrunchFile(self.image_data).decode_level(0)
+		#if self.format in (TextureFormat.DXT1Crunched, TextureFormat.DXT5Crunched):
+		#	data = CrunchFile(self.image_data).decode_level(0)
 
 		# Pillow wants bytes, not bytearrays
 		data = bytes(data)

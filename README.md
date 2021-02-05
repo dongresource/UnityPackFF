@@ -14,7 +14,7 @@ Please take the time to figure out how to accomplish what you want yourself if y
 This project was forked from commit `d9ce99fa` of UnityPack.
 The upstream readme has been renamed to [README.UP.md](README.UP.md).
 
-It currently supports working with all asset bundles from the original game, as well as all asset bundles from FusionFall Retro with the sole exception of TableData.
+It currently supports working with all asset bundles from the original game, as well as all asset bundles from FusionFall Retro.
 
 Note that this repository is a loose collection of patches and scripts I had originally written for my own use and have only slightly cleaned up before publishing.
 Do read the scripts in `bin` before executing them to make sure you understand what they do.

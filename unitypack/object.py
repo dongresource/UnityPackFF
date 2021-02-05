@@ -124,10 +124,8 @@ class ObjectInfo:
 		elif t in ("SInt32", "int"):
 			result = buf.read_int()
 		elif t == "float":
-			buf.align()
 			result = buf.read_float()
 		elif t == "double":
-			buf.align()
 			result = buf.read_double()
 		elif t == "string":
 			size = buf.read_uint()

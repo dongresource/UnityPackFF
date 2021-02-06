@@ -59,18 +59,13 @@ class AssetBundle:
 		self.bundle_count = buf.read_int()
 
 		if self.format_version >= 2:
-			self.bundle_size = buf.read_uint()  # without header_size
+			# both without header_size
+			self.bundle_size = buf.read_uint()
+			self.uncompressed_bundle_size = buf.read_uint()
 
-			if self.format_version >= 3:
-				self.uncompressed_bundle_size = buf.read_uint()  # without header_size
-
-		if self.header_size >= 60:
-			self.compressed_file_size = buf.read_uint()  # with header_size
-			self.asset_header_size = buf.read_uint()
-
-		buf.read_int()
-		buf.read_byte()
-		self.name = buf.read_string()
+		buf.read_int() # last offset
+		buf.read_byte() # dummy byte
+		self.name = self.path
 
 		# Preload assets
 		buf.seek(self.header_size)

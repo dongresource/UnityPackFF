@@ -26,15 +26,28 @@ class Asset:
 			ret.name = buf.read_string()
 			header_size = buf.read_uint()
 			buf.read_uint()  # size
-		else:
-			header_size = bundle.asset_header_size
 
 		# FIXME: this offset needs to be explored more
 		ofs = buf.tell()
 		if bundle.compressed:
 			dec = lzma.LZMADecompressor()
 			data = dec.decompress(buf.read())
-			ret._buf = BinaryReader(BytesIO(data[header_size:]), endian=">")
+
+			assert len(data) == bundle.uncompressed_bundle_size
+
+			# parse header
+			header = BinaryReader(BytesIO(data), endian=">")
+			file_count = header.read_uint()
+
+			if file_count != 1:
+				print('WARNING: Bundle contains {} files. Reading only the first.'.format(file_count))
+
+			ret.name = header.read_string()
+			file_offset = header.read_uint()
+			size = header.read_uint()
+
+			# assign asset body
+			ret._buf = BinaryReader(BytesIO(data[file_offset:file_offset+size]), endian=">")
 			ret._buf_ofs = 0
 			buf.seek(ofs)
 		else:

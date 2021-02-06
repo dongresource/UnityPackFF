@@ -9,6 +9,7 @@ from .utils import BinaryReader, lz4_decompress
 SIGNATURE_RAW = "UnityRaw"
 SIGNATURE_WEB = "UnityWeb"
 SIGNATURE_FS = "UnityFS"
+SIGNATURE_RETRO = "streamed"
 
 
 class AssetBundle:
@@ -27,26 +28,25 @@ class AssetBundle:
 
 	@property
 	def compressed(self):
-		return self.signature == SIGNATURE_WEB
+		return self.signature in (SIGNATURE_WEB, SIGNATURE_RETRO)
 
 	def load(self, file):
 		buf = BinaryReader(file, endian=">")
 		self.path = file.name
 
-		# Verify that the format starts with b"Unity"
-		position = buf.tell()
-		if buf.read(5) != b"Unity":
-			raise NotImplementedError("File does not start with b'Unity': %r" % self.path)
-		buf.seek(position)
-
 		self.signature = buf.read_string()
+
+		# Verify that the format starts is supported
+		if self.signature not in (SIGNATURE_RAW, SIGNATURE_WEB, SIGNATURE_FS, SIGNATURE_RETRO):
+			raise NotImplementedError("%r is of an unsupported format" % self.path)
+
 		self.format_version = buf.read_int()
 		self.unity_version = buf.read_string()
 		self.generator_version = buf.read_string()
 
 		if self.is_unityfs:
 			self.load_unityfs(buf)
-		elif self.signature in (SIGNATURE_RAW, SIGNATURE_WEB):
+		elif self.signature in (SIGNATURE_RAW, SIGNATURE_WEB, SIGNATURE_RETRO):
 			self.load_raw(buf)
 		else:
 			raise NotImplementedError("Unrecognized file signature %r in %r" % (self.signature, self.path))

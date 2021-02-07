@@ -66,6 +66,14 @@ class ObjectInfo:
 			return TypeMetadata.default(self.asset).type_trees[self.class_id]
 		return self.asset.types[self.type_id]
 
+	@property
+	def epath_id(self):
+		"effective path_id"
+		if self.asset.long_object_ids:
+			return self.path_id & 0xffffffff
+		else:
+			return self.path_id
+
 	def load(self, buf):
 		self.path_id = self.read_id(buf)
 		self.data_offset = buf.read_uint() + self.asset.data_offset
@@ -88,17 +96,13 @@ class ObjectInfo:
 
 	def read_id(self, buf):
 		if self.asset.long_object_ids:
-			# read 8 bytes, but only use the first 4
-			first = buf.read_uint()
-			second = buf.read_uint()
-			return first
+			return buf.read_uint64()
 		else:
 			return self.asset.read_id(buf)
 
 	def write_id(self, buf, val):
 		if self.asset.long_object_ids:
-			buf.write_uint(val)
-			buf.write_uint(0)
+			buf.write_uint64(val)
 		else:
 			buf.write_int(val)
 

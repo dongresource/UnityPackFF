@@ -113,6 +113,9 @@ class BinaryReader:
 	def read_int64(self) -> int:
 		return struct.unpack(self.endian + "q", self.read(8))[0]
 
+	def read_uint64(self) -> int:
+		return struct.unpack(self.endian + "Q", self.read(8))[0]
+
 
 class BinaryWriter:
 	def __init__(self, buf, endian="<"):
@@ -177,3 +180,6 @@ class BinaryWriter:
 
 	def write_int64(self, val):
 		return self.write(struct.pack(self.endian + "q", val))
+
+	def write_uint64(self, val):
+		return self.write(struct.pack(self.endian + "Q", val))

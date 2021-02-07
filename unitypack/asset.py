@@ -171,10 +171,10 @@ class Asset:
 				logging.warning("%r absent from structs.dat", obj.class_id)
 				self.types[obj.type_id] = None
 
-		if obj.path_id in self._objects:
+		if obj.epath_id in self._objects:
 			raise ValueError("Duplicate asset object: %r (path_id=%r)" % (obj, obj.path_id))
 
-		self._objects[obj.path_id] = obj
+		self._objects[obj.epath_id] = obj
 
 	def pretty(self):
 		ret = []

@@ -89,6 +89,20 @@ class TypeTree:
 			return self.NULL
 		return data[offset:].partition(b"\0")[0].decode("utf-8")
 
+	def save(self, buf):
+		# XXX: recalculate these first
+		buf.write_string(self.type)
+		buf.write_string(self.name)
+		buf.write_int(self.size)
+		buf.write_int(self.index)
+		buf.write_int(self.is_array)
+		buf.write_int(self.version)
+		buf.write_int(self.flags)
+
+		buf.write_uint(len(self.children))
+		for child in self.children:
+			child.save(buf)
+
 
 class TypeMetadata:
 	default_instance = None
@@ -159,3 +173,9 @@ class TypeMetadata:
 				tree = TypeTree(format)
 				tree.load(buf)
 				self.type_trees[class_id] = tree
+
+	def save(self, buf, format=None):
+		buf.write_int(len(self.type_trees))
+		for class_id, tree in self.type_trees.items():
+			buf.write_int(class_id)
+			tree.save(buf)

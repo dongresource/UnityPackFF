@@ -97,14 +97,14 @@ Of those, the seventh, `xdtdata`, is the most interesting.
 We can read it out into a variable with:
 
 ```python
-xdtdata = tabledata.objects[7].read()
+xdtdata = tabledata.objects[7].contents
 ```
 
 Make sure to read large objects like this one into a variable, as accessing them directly from the asset incurs disk IO every time, which makes browsing the table sluggish.
 
 The way these Unity objects are structured, everything in the `objects` dict is a Python object of type `ObjectInfo`.
-The `ObjectInfo` class's `read()` method returns the actual asset object, which can be an instance of either one of UnityPack's specialized classes (`Texture2D`, `AudioClip`, `Transform`, etc), or a `FFOrderedDict` object by default.
-In case of one of the former, the underlying `FFOrderedDict` can usually be accessed by the specialized class's `_obj` member (like `asset.objects[...].read()._obj`).
+The `ObjectInfo` class's `contents` member is the actual asset object, which can be an instance of either one of UnityPack's specialized classes (`Texture2D`, `AudioClip`, `Transform`, etc), or a `FFOrderedDict` object by default.
+In case of one of the former, the underlying `FFOrderedDict` can usually be accessed by the specialized class's `_obj` member (like `asset.objects[...].contents._obj`).
 
 You can browse these objects interactively as you would any other Python data structures.
 The smaller `FFOrderedDict`s like `Transform`s and `GameObject`s you can print whole, but larger ones (like the aforementioned `xdtdata`) would just overflow your terminal.

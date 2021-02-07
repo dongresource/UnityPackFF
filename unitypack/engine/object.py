@@ -7,7 +7,9 @@ def field(f, cast=None, **kwargs):
 		if cast:
 			ret = cast(ret)
 		return ret
-	return property(_inner)
+	def _setter(self, val):
+		self._obj[f] = val
+	return property(_inner, _setter)
 
 
 class Object:

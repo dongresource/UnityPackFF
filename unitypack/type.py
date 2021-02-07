@@ -20,7 +20,7 @@ class TypeTree:
 
 	def __repr__(self):
 		return "<%s %s (size=%r, index=%r, is_array=%r, flags=%r)>" % (
-			self.type, self.name, self.size, self.index, self.is_array, self.flags
+			self.type, self.name, self.size, self.index, self.is_array, hex(self.flags)
 		)
 
 	@property

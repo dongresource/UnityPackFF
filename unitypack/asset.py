@@ -6,7 +6,7 @@ from io import BytesIO
 from uuid import UUID
 from .object import ObjectInfo
 from .type import TypeMetadata
-from .utils import BinaryReader
+from .utils import BinaryReader, BinaryWriter
 
 
 class Asset:
@@ -184,6 +184,57 @@ class Asset:
 				ret.append("\t" + repr(child))
 		return "\n".join(ret)
 
+	def save(self, f):
+		buf = BinaryWriter(f, endian="<")
+		#print('saving...')
+
+		# skip first four int fields for now
+		buf.seek(16, os.SEEK_CUR)
+
+		# XXX
+		hack = [4, 3, 3, 3, 3, 4, 0, 0] # last one could also be 2, but apparently not?
+		i = 0
+		# write object data
+		for obj in self.objects.values():
+			buf.align()
+			#if i > 0: # XXX
+			#	buf.seek(hack[i-1], os.SEEK_CUR)
+			obj.save_data(buf)
+			i += 1
+		#buf.write_int16(0) # XXX
+
+		metadata_offset = buf.tell()
+		self.tree.save(buf)
+
+		if self.format == 7:
+			buf.write_int(self.long_object_ids)
+
+		# write object metadata
+		buf.write_uint(len(self.objects)) # will load() if necessary
+		for obj in self.objects.values():
+			obj.save_metadata(buf)
+
+		buf.write_uint(len(self.asset_refs) - 1)
+		for ref in self.asset_refs[1:]: # skip self
+			ref.save(buf)
+		#buf.write_byte(0) # XXX
+		#buf.write_int16(0)
+
+		# recalculate sizes
+		self.file_size = buf.tell()
+		self.metadata_size = self.file_size - metadata_offset
+
+		# go back to the start, write the header
+		buf.seek(0)
+		buf.endian = ">"
+
+		buf.write_uint(self.metadata_size)
+		buf.write_uint(self.file_size)
+		buf.write_uint(self.format)
+		buf.write_uint(self.data_offset) # appears to always be 0
+
+		f.flush()
+
 
 class AssetRef:
 	def __init__(self, source):
@@ -200,6 +251,12 @@ class AssetRef:
 		self.type = buf.read_int()
 		self.file_path = buf.read_string()
 		self.asset = None
+	
+	def save(self, buf):
+		buf.write_string(self.asset_path)
+		buf.seek(16, os.SEEK_CUR) # UUIDs are unused in FF
+		buf.write_int(self.type)
+		buf.write_string(self.file_path)
 
 	def resolve(self):
 		return self.source.get_asset(self.file_path)

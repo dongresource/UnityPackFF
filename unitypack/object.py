@@ -4,13 +4,14 @@ from io import BytesIO
 from . import engine as UnityEngine
 from .resources import UnityClass
 from .type import TypeMetadata, TypeTree
-from .utils import BinaryReader
+from .utils import BinaryReader, BinaryWriter
 
 
 class FFOrderedDict(OrderedDict):
-	def __init__(self, offset):
+	def __init__(self, offset, asset=None):
 		self.offset = offset
 		self.memboffsets = dict()
+		self.asset = asset
 
 		OrderedDict.__init__(self)
 
@@ -31,6 +32,7 @@ def load_object(type, obj):
 class ObjectInfo:
 	def __init__(self, asset):
 		self.asset = asset
+		self._contents = None
 
 	def __repr__(self):
 		return "<%s %i>" % (self.type, self.class_id)
@@ -92,12 +94,27 @@ class ObjectInfo:
 			return first
 		else:
 			return self.asset.read_id(buf)
+	
+	def write_id(self, buf, val):
+		if self.asset.long_object_ids:
+			buf.write_uint(val)
+			buf.write_uint(0)
+		else:
+			buf.write_int(val)
+
+	@property
+	def contents(self):
+		# TODO: decide if this is the API we want
+		if self._contents is None:
+			return self.read()
+		return self._contents
 
 	def read(self):
 		buf = self.asset._buf
 		buf.seek(self.asset._buf_ofs + self.data_offset)
 		object_buf = buf.read(self.size)
-		return self.read_value(self.type_tree, BinaryReader(BytesIO(object_buf)))
+		self._contents = self.read_value(self.type_tree, BinaryReader(BytesIO(object_buf)))
+		return self._contents
 
 	def read_value(self, type, buf):
 		align = False
@@ -105,6 +122,7 @@ class ObjectInfo:
 		pos_before = buf.tell()
 		t = type.type
 		first_child = type.children[0] if type.children else TypeTree(self.asset.format)
+
 		if t == "bool":
 			result = buf.read_boolean()
 		elif t == "SInt8":
@@ -157,7 +175,7 @@ class ObjectInfo:
 				second = self.read_value(type.children[1], buf)
 				result = (first, second)
 			else:
-				result = FFOrderedDict(buf.tell() + self.asset._buf_ofs + self.data_offset)
+				result = FFOrderedDict(buf.tell() + self.asset._buf_ofs + self.data_offset, self.asset)
 
 				for child in type.children:
 					result.setmemboffset(child.name, buf.tell() + self.asset._buf_ofs + self.data_offset)
@@ -184,6 +202,112 @@ class ObjectInfo:
 	def resolve_streaming_asset(self, path):
 		if len(path) > 0:
 			return self.asset.get_asset(path)
+
+	def save_data(self, buf):
+		# ensure the object has been read before we change data_offset
+		self.read()
+
+		object_buf = BytesIO()
+		self.data_offset = buf.tell()
+		bw = BinaryWriter(object_buf)
+		#if self.path_id == 9: # XXX
+		#	self.data_offset += 2
+		#	buf.seek(2, 1)
+			#print('adding two bytes')
+			#bw.write_int16(0)
+			#print(object_buf.write(b'\0\0'))
+		#	print(hex(self.data_offset + self.size))
+		self.write_value(self.type_tree, bw, self.contents)
+		#self.write_value(self.type_tree, BinaryWriter(object_buf), self.contents)
+
+		object_data = object_buf.getvalue()
+		#self.size = len(object_data) + 2 # XXX
+		self.size = len(object_data)
+		buf.write(object_data)
+
+	def save_metadata(self, buf):
+		self.write_id(buf, self.path_id)
+		buf.write_uint(self.data_offset - self.asset.data_offset)
+		buf.write_uint(self.size)
+
+		buf.write_int(self.type_id)
+		buf.write_int16(self.class_id)
+
+		buf.write_int16(self.is_destroyed)
+	
+	def write_value(self, type, buf, content):
+		if hasattr(content, "_obj"):
+			content = content._obj
+
+		align = False
+		expected_size = type.size
+		pos_before = buf.tell()
+		t = type.type
+		first_child = type.children[0] if type.children else TypeTree(self.asset.format)
+
+		if t == "bool":
+			buf.write_boolean(content)
+		elif t == "SInt8":
+			buf.write_byte(content)
+		elif t == "UInt8":
+			buf.write_ubyte(content)
+		elif t == "SInt16":
+			buf.write_int16(content)
+		elif t == "UInt16":
+			buf.write_uint16(content)
+		elif t == "SInt64":
+			buf.write_int64(content)
+		elif t == "UInt64":
+			buf.write_uint64(content)
+		elif t in ("UInt32", "unsigned int"):
+			buf.write_uint(content)
+		elif t in ("SInt32", "int"):
+			buf.write_int(content)
+		elif t == "float":
+			buf.write_float(content)
+		elif t == "double":
+			buf.write_double(content)
+		elif t == "string":
+			buf.write_uint(len(content.encode()))
+			buf.write_string(content, pascal=True)
+			align = type.children[0].post_align
+		else:
+			if type.is_array:
+				first_child = type
+
+			if t.startswith("PPtr<"):
+				if content is None:
+					content = ObjectPointer(type, self.asset)
+					content.file_id = 0
+					content.path_id = 0
+				content.save(buf)
+
+			elif first_child and first_child.is_array:
+				align = first_child.post_align
+				array_type = first_child.children[1]
+				buf.write_uint(len(content))
+				if array_type.type in ("char", "UInt8"):
+					# ASCII, not UTF-8
+					buf.write(content)
+				else:
+					for memb in content:
+						self.write_value(array_type, buf, memb)
+			elif t == "pair":
+				assert len(type.children) == 2
+				self.write_value(type.children[0], buf, content[0])
+				self.write_value(type.children[1], buf, content[1])
+			else:
+				for child in type.children:
+					self.write_value(child, buf, content[child.name])
+				# streamed resources are not used by FF
+
+		pos_after = buf.tell()
+		actual_size = pos_after - pos_before
+		if expected_size > 0 and actual_size < expected_size:
+			raise ValueError("Expected read_value(%r) to read %r bytes, but only read %r bytes" % (type, expected_size, actual_size))
+
+		if align or type.post_align:
+			buf.align()
 
 
 class ObjectPointer:
@@ -222,11 +346,20 @@ class ObjectPointer:
 		return self.asset.objects[self.path_id]
 
 	def load(self, buf):
+		#print('reading ptr', buf.tell())
 		self.file_id = buf.read_int()
 		if self.source_asset.format == 7:
 			self.path_id = buf.read_uint()
 		else:
 			self.path_id = self.source_asset.read_id(buf)
+	
+	def save(self, buf):
+		#print('writing ptr', buf.tell())
+		buf.write_int(self.file_id)
+		if self.source_asset.format == 7:
+			buf.write_uint(self.path_id)
+		else:
+			buf.write_int(self.path_id)
 
 	def resolve(self):
 		return self.object.read()

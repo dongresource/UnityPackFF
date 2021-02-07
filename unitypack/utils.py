@@ -112,3 +112,68 @@ class BinaryReader:
 
 	def read_int64(self) -> int:
 		return struct.unpack(self.endian + "q", self.read(8))[0]
+
+
+class BinaryWriter:
+	def __init__(self, buf, endian="<"):
+		self.buf = buf
+		self.endian = endian
+
+	def align(self):
+		old = self.tell()
+		new = (old + 3) & -4
+		if new > old:
+			self.seek(new - old, SEEK_CUR)
+
+	def write(self, *args):
+		return self.buf.write(*args)
+
+	def seek(self, *args):
+		return self.buf.seek(*args)
+
+	def tell(self):
+		return self.buf.tell()
+
+	def write_string(self, _val, pascal=False, encoding="utf-8"):
+		# Passing sizes is awkward if the string actually contains Unicode characters,
+		# so instead we just explicitly ask for pascal strings instead of passing a size.
+		val = _val.encode(encoding)
+		if pascal is False:
+			return self.write_cstring(val)
+		else:
+			return self.write(struct.pack(self.endian + "%is" % (len(val)), val))
+
+	def write_cstring(self, val):
+		self.write(val)
+		self.write(b'\0')
+		return len(val) + 1
+	
+	def write_boolean(self, val):
+		return self.write_byte(val)
+
+	def write_byte(self, val):
+		return self.write(struct.pack(self.endian + "b", val))
+
+	def write_ubyte(self, val):
+		return self.write(struct.pack(self.endian + "B", val))
+
+	def write_int16(self, val):
+		return self.write(struct.pack(self.endian + "h", val))
+
+	def write_uint16(self, val):
+		return self.write(struct.pack(self.endian + "H", val))
+
+	def write_int(self, val):
+		return self.write(struct.pack(self.endian + "i", val))
+
+	def write_uint(self, val):
+		return self.write(struct.pack(self.endian + "I", val))
+
+	def write_float(self, val):
+		return self.write(struct.pack(self.endian + "f", val))
+
+	def write_double(self, val):
+		return self.write(struct.pack(self.endian + "d", val))
+
+	def write_int64(self, val):
+		return self.write(struct.pack(self.endian + "q", val))

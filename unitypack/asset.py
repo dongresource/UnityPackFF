@@ -195,34 +195,39 @@ class Asset:
 		hack = [4, 3, 3, 3, 3, 4, 0, 0] # last one could also be 2, but apparently not?
 		i = 0
 		# write object data
-		for obj in self.objects.values():
+		for obj in self.objects.values(): # will load() if necessary
 			buf.align()
 			#if i > 0: # XXX
 			#	buf.seek(hack[i-1], os.SEEK_CUR)
 			obj.save_data(buf)
 			i += 1
 		#buf.write_int16(0) # XXX
+		print('body', obj.data_offset + obj.size)
 
 		metadata_offset = buf.tell()
+		buf.write_byte(0)
 		self.tree.save(buf)
+		print('mtdt_off', metadata_offset)
 
 		if self.format == 7:
 			buf.write_int(self.long_object_ids)
 
 		# write object metadata
-		buf.write_uint(len(self.objects)) # will load() if necessary
+		buf.write_uint(len(self.objects))
 		for obj in self.objects.values():
 			obj.save_metadata(buf)
 
 		buf.write_uint(len(self.asset_refs) - 1)
 		for ref in self.asset_refs[1:]: # skip self
 			ref.save(buf)
-		#buf.write_byte(0) # XXX
+		buf.write_byte(0) # XXX
 		#buf.write_int16(0)
 
 		# recalculate sizes
 		self.file_size = buf.tell()
 		self.metadata_size = self.file_size - metadata_offset
+		print('file_size', self.file_size)
+		print('metadata_size', self.metadata_size)
 
 		# go back to the start, write the header
 		buf.seek(0)

@@ -167,6 +167,7 @@ class TypeMetadata:
 			if format == 6 or format == 7:
 				buf.seek(self.asset.file_size - self.asset.metadata_size + 1)
 
+			#print(hex(buf.tell()))
 			num_fields = buf.read_int()
 			for i in range(num_fields):
 				class_id = buf.read_int()

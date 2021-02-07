@@ -205,7 +205,7 @@ class ObjectInfo:
 
 	def save_data(self, buf):
 		# ensure the object has been read before we change data_offset
-		self.read()
+		self.contents
 
 		object_buf = BytesIO()
 		self.data_offset = buf.tell()

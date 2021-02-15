@@ -55,7 +55,9 @@ MISSION_DESCRIPTION_TEXT = 'I have heard report of one of Fuse\'s minions terror
 MISSION_COMPLETE_SUMMARY_TEXT = 'I defeated Don Doom, Fuse\'s strongest minion.'
 NPC_MISSION_COMPLETE_SUMMARY_TEXT = 'You have done well, but I am afraid Fuse\'s monsters are growing too strong. The time machine remains our only hope.'
 MISSION_SUMMARY_TEXT = 'Investigate and defeat the monster ravaging Pokey Oaks.'
-MISSION_PREREQS = [] # Array of mission ids
+
+MISSION_COMPLETE_BARKERS = ['Thanks for taking care of that giant Doom Strider.', 'You are really brave for taking on Don Doom!', 'How much did Samurai Jack pay you to fight that big ugly Doom Strider?', 'Can I get one of your Super Slayer items?']
+MISSION_PREREQS = [501] # Array of mission ids (in this case Spawn Spree)
 
 # Task data
 # Task types - 1: talk to npc 2: touch waypoint 3: interact with object 4: deliver item to npc 5: kill mobs 6: escort
@@ -261,8 +263,7 @@ def main(tabledata):
 	for k,v in rewardData[0].items(): 
 		reward[k] = v
 		if isinstance(v, list):
-			length = len(v) 
-			reward[k] = [0] * length
+			reward[k] = [0] * len(v)
 
 	reward['m_iMissionRewardID'] = len(rewardData)
 	reward['m_iCash'] = REWARD_TAROS
@@ -286,13 +287,15 @@ def main(tabledata):
 	for data in missionData:
 		if data['m_iHTaskID'] > maxTaskId: 
 			maxTaskId = data['m_iHTaskID']
+	maxTaskId = maxTaskId + 1
+
+	lastNonInstanceTask = maxTaskId
 
 	def addMissionData(mission, taskInfo):
 		for k,v in missionData[0].items(): 
 			mission[k] = v
 			if isinstance(v, list):
-				length = len(v) 
-				mission[k] = [0] * length
+				mission[k] = [0] * len(v)
 
 		mission['m_iHMissionName'] = nameId
 		mission['m_iHJournalNPCID'] = taskInfo['journalNPC']
@@ -349,7 +352,7 @@ def main(tabledata):
 		mission['m_iSTJournalIDAdd'] = journalId
 		mission['m_iSUJournalIDAdd'] = journalId # NOTE in some missions these are different? but it's a pretty useless thing
 		
-		# TODO implement other task types
+		# TODO implement task type 6 - escorts
 		if taskInfo['taskType'] == 1 or taskInfo['taskType'] == 3 or taskInfo['taskType'] == 4: 
 			mission['m_iHTerminatorNPCID'] = taskInfo['targetNPC']
 			mission['m_iSTGrantWayPoint'] = taskInfo['targetNPC']
@@ -374,7 +377,7 @@ def main(tabledata):
 		mission = FFOrderedDict(0)
 		addMissionData(mission, taskInfo)
 
-		mission['m_iHTaskID'] = maxTaskId + i + 1
+		mission['m_iHTaskID'] = maxTaskId + i
 
 		if 'timer' in taskInfo:
 			mission['m_iSTGrantTimer'] = taskInfo['timer']
@@ -382,19 +385,28 @@ def main(tabledata):
 			failMission = FFOrderedDict(0)
 			addMissionData(failMission, taskInfo['failTask'])
 			maxTaskId = maxTaskId + 1 # Failure task will be next, all tasks after are pushed down an index
-			failMission['m_iHTaskID'] = maxTaskId + i + 1
-			mission['m_iFOutgoingTask'] = maxTaskId + i + 1
-			failMission['m_iSUOutgoingTask'] = maxTaskId + i # Return to previous task, no +1 because maxTaskId was incremented
+			failMission['m_iHTaskID'] = maxTaskId + i
+			mission['m_iFOutgoingTask'] = maxTaskId + i 
+			failMission['m_iSUOutgoingTask'] = maxTaskId + i - 1 # Return to previous task, no +1 because maxTaskId was incremented
 			missionData.append(failMission)
+
+		if 'reqInstance' in taskInfo:
+			mission['m_iRequireInstanceID'] = taskInfo['reqInstance']
+			if mission['m_iFOutgoingTask'] != 0:
+				mission['m_iFOutgoingTask'] = lastNonInstanceTask
+		else:
+			lastNonInstanceTask = maxTaskId + i
+			
 
 		if i == 0: 
 			mission['m_iHNPCID'] = GIVER_ID
 
 		if i == len(TASK_DATA) - 1:
-			# TODO implement unlocked barkers after mission completion (and output the created barker IDs as they have to be added to the npc data)
 			mission['m_iSUReward'] = reward['m_iMissionRewardID']
+			for i in range(min(4, len(MISSION_COMPLETE_BARKERS))):
+				mission['m_iHBarkerTextID'][i] = createMissionString(MISSION_COMPLETE_BARKERS[i])
 		else:
-			mission['m_iSUOutgoingTask'] = maxTaskId + i + 2
+			mission['m_iSUOutgoingTask'] = maxTaskId + i + 1
 
 		missionData.append(mission)
 

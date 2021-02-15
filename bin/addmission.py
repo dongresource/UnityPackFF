@@ -370,6 +370,9 @@ def main(tabledata):
 					mission['m_iCSUItemID'][i] = taskInfo['drops'][i]
 					mission['m_iCSUItemNumNeeded'][i] = taskInfo['dropNum'][i]
 					mission['m_iSTItemDropRate'][i] = taskInfo['dropRates'][i]
+		elif taskInfo['taskType'] == 6:
+			mission['m_iCSUDEFNPCAI'] = 6
+			mission['m_iCSUDEFNPCID'] = taskInfo['escortNPC']
 
 	for i in range(len(TASK_DATA)):
 		taskInfo = TASK_DATA[i]

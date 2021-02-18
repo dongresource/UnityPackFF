@@ -8,7 +8,7 @@ from .utils import BinaryReader, BinaryWriter
 
 
 class FFOrderedDict(OrderedDict):
-	def __init__(self, offset, asset=None):
+	def __init__(self, offset=0, asset=None):
 		self.offset = offset
 		self.memboffsets = dict()
 		self.asset = asset
@@ -20,6 +20,7 @@ class FFOrderedDict(OrderedDict):
 	
 	def getmemboffset(self, name):
 		return self.memboffsets[name]
+
 
 def load_object(type, obj):
 	clsname = type.type
@@ -110,10 +111,15 @@ class ObjectInfo:
 	def contents(self):
 		# TODO: decide if this is the API we want
 		if self._contents is None:
-			return self.read()
+			return self._read()
 		return self._contents
 
 	def read(self):
+		if self._contents is None:
+			return self._read()
+		return self._contents
+
+	def _read(self):
 		buf = self.asset._buf
 		buf.seek(self.asset._buf_ofs + self.data_offset)
 		object_buf = buf.read(self.size)
@@ -302,6 +308,50 @@ class ObjectInfo:
 
 		if align or type.post_align:
 			buf.align()
+
+	def init(self):
+		self._contents = self.init_empty(self.type_tree)
+
+	def init_empty(self, type):
+		t = type.type
+
+		first_child = type.children[0] if type.children else TypeTree(self.asset.format)
+		if t == "bool":
+			result = bool()
+		elif "Int" in t or "int" in t:
+			result = int()
+		elif t in ("float", "double"):
+			result = float()
+		elif t == "string":
+			result = str()
+		else:
+			if type.is_array:
+				first_child = type
+
+			if t.startswith("Ptr<"):
+				result = None
+
+			elif first_child and first_child.is_array:
+				array_type = first_child.children[1]
+				if array_type.type in ("char", "UInt8"):
+					result = bytes()
+				else:
+					result = list()
+
+			elif t == "pair":
+				first = self.init_empty(type.children[0])
+				second = self.init_empty(type.children[1])
+				result = (first, second)
+
+			else:
+				result = FFOrderedDict()
+
+				for child in type.children:
+					result[child.name] = self.init_empty(child)
+
+				result = load_object(type, result)
+
+		return result
 
 
 class ObjectPointer:

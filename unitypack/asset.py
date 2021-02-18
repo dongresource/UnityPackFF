@@ -4,7 +4,7 @@ import lzma
 from binascii import hexlify
 from io import BytesIO
 from uuid import UUID
-from .object import ObjectInfo
+from .object import ObjectInfo, ObjectPointer, FFOrderedDict
 from .type import TypeMetadata
 from .utils import BinaryReader, BinaryWriter
 
@@ -232,6 +232,54 @@ class Asset:
 		buf.write_uint(self.data_offset) # appears to always be 0
 
 		f.flush()
+
+	def next_path_id(self):
+		if self.format == 7: # TODO
+			raise NotImplementedError('generating path_ids for format 7 is not yet understood')
+		else:
+			return max(self.objects.keys()) + 1
+
+	def add_object(self, type_id):
+		if not self.loaded:
+			self.load()
+
+		obj = ObjectInfo(self)
+
+		obj.path_id = self.next_path_id()
+		obj.type_id = type_id
+		obj.class_id = type_id
+		obj.is_destroyed = False
+
+		# populate all fields with their respective null values
+		obj.init()
+
+		self._objects[obj.path_id] = obj
+
+		return obj
+
+	def add2ab(self, path, path_id, file_id=0):
+		"Add a path -> ObjectPointer connection into the AssetBundle object"
+
+		if self.objects[1].type != 'AssetBundle':
+			raise ValueError('AssetBundle object not found. Is this a Scene bundle?')
+
+		ab = self.objects[1].contents
+		ab_index = len(ab['m_Container'])
+		preload_index = max([x[1]['preloadIndex'] for x in ab['m_Container']]) + 1
+
+		ptr = ObjectPointer(None, self) # type argument is unused
+		ptr.file_id = file_id
+		ptr.path_id = path_id
+
+		abdata = FFOrderedDict()
+		abdata['preloadIndex'] = preload_index
+		abdata['preloadSize'] = 1
+		abdata['asset'] = ptr
+
+		ret = (path, abdata)
+		ab['m_Container'].append(ret)
+
+		return ret
 
 
 class AssetRef:

@@ -1,5 +1,5 @@
 from io import BytesIO
-from .utils import BinaryReader
+from .utils import BinaryReader, BitReader
 
 
 class OBJVector2:
@@ -13,7 +13,7 @@ class OBJVector2:
 		return self
 
 	def __str__(self):
-		return "%s %s" % (self.x, 1 - self.y)
+		return "%s %s" % (self.x, self.y)
 
 
 class OBJVector3(OBJVector2):
@@ -27,7 +27,7 @@ class OBJVector3(OBJVector2):
 		return self
 
 	def __str__(self):
-		return "%s %s %s" % (-self.x, self.y, self.z)
+		return "%s %s %s" % (self.x, self.y, self.z)
 
 
 class OBJVector4(OBJVector3):
@@ -107,10 +107,10 @@ class MeshData:
 
 	def simple_extract_vertices(self):
 		for v in self.mesh._obj['m_Vertices']:
-			self.vertices.append(OBJVector3(v['x'], v['y'], v['z']))
+			self.vertices.append(OBJVector3(-v['x'], v['y'], v['z']))
 
 		for v in self.mesh._obj['m_Normals']:
-			self.normals.append(OBJVector3(v['x'], v['y'], v['z']))
+			self.normals.append(OBJVector3(-v['x'], v['y'], v['z']))
 
 		for v in self.mesh._obj['m_UV']:
 			self.uv1.append(OBJVector2(v['x'], 1-v['y']))
@@ -198,43 +198,11 @@ class CompressedMeshData:
 
 		self.extract_mesh()
 
-	class BitReader:
-		def __init__(self, buf, size):
-			self.buf = buf
-			self.size = size
-
-			self.bitcount = 8
-			self.i = 0
-			self.byte = self.nextbyte()
-
-		def nextbyte(self):
-			if self.i >= len(self.buf):
-				return 0
-			b = self.buf[self.i]
-			self.i += 1
-			return b
-
-		def read(self):
-			if self.size == 8 and self.bitcount == 0:
-				return self.nextbyte()
-
-			while self.bitcount < self.size:
-				newbyte = self.nextbyte()
-				# XXX: not sure why disunity has a special case for -1 here
-				self.byte |= newbyte << self.bitcount
-				self.bitcount += 8
-
-			ret = self.byte & ((1 << self.size) - 1)
-			self.byte >>= self.size
-			self.bitcount -= self.size
-			return ret
-
-
 	def read_bits(self, pbv):
 		if pbv['m_NumItems'] == 0 or pbv['m_BitSize'] == 0:
 			return []
 
-		reader = self.BitReader(pbv['m_Data'], pbv['m_BitSize'])
+		reader = BitReader(pbv['m_Data'], pbv['m_BitSize'])
 
 		ret = []
 		for i in range(pbv['m_NumItems']):
@@ -287,11 +255,11 @@ class CompressedMeshData:
 
 		vertex_floats = self.read_floats(cmesh['m_Vertices'])
 		for i in range(0, len(vertex_floats), 3):
-			self.vertices.append(OBJVector3(vertex_floats[i], vertex_floats[i+1], vertex_floats[i+2]))
+			self.vertices.append(OBJVector3(-vertex_floats[i], vertex_floats[i+1], vertex_floats[i+2]))
 
 		normal_floats = self.read_normals(cmesh['m_Normals'], cmesh['m_NormalSigns'])
 		for i in range(0, len(normal_floats), 3):
-			self.normals.append(OBJVector3(normal_floats[i], normal_floats[i+1], normal_floats[i+2]))
+			self.normals.append(OBJVector3(-normal_floats[i], normal_floats[i+1], normal_floats[i+2]))
 
 		uv_floats = self.read_floats(cmesh['m_UV'])
 		for i in range(0, len(uv_floats), 2):

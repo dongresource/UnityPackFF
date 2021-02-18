@@ -3,6 +3,8 @@ from .object import Object, field
 
 
 class TextureFormat(IntEnum):
+	UNCONFIGURED = 0
+
 	Alpha8 = 1
 	ARGB4444 = 2
 	RGB24 = 3
@@ -139,6 +141,7 @@ class Texture2D(Texture):
 	texture_dimension = field("m_TextureDimension")
 	mipmap = field("m_MipMap")
 	complete_image_size = field("m_CompleteImageSize")
+	image_count = field("m_ImageCount")
 	stream_data = field("m_StreamData", default=False)
 
 	def __repr__(self):

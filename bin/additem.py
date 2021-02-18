@@ -6,10 +6,8 @@
 # new items. Will also need to be modified to work with girls' or unisex items.
 
 from unitypack.asset import Asset
-from unitypack.object import ObjectInfo, ObjectPointer, FFOrderedDict
-from unitypack.engine.texture import Texture2D
-
-from wand.image import Image
+from unitypack.object import FFOrderedDict
+from unitypack.modding import import_texture
 
 # asset bundles
 TABLEDATA_PATH = 'CustomAssetBundle-1dca92eecee4742d985b799d8226666d'
@@ -43,26 +41,8 @@ def findnexticon(tabledata, typ):
 	
 	return ret + 1
 
-def add2assetbundle(asset, path, path_id):
-	ab = asset.objects[1].contents
-	ab_index = len(ab['m_Container'])
-	preload_index = max([x[1]['preloadIndex'] for x in ab['m_Container']]) + 1
-
-	ptr = ObjectPointer(None, asset) # type argument is unused
-	ptr.file_id = 0
-	ptr.path_id = path_id
-
-	abdata = FFOrderedDict(0)
-	abdata['preloadIndex'] = preload_index
-	abdata['preloadSize'] = 1
-	abdata['asset'] = ptr
-
-	ab['m_Container'].append((path, abdata))
-
-	return ab_index, preload_index
-
 def fromtempl(table, src, dst):
-	table.append(FFOrderedDict(0))
+	table.append(FFOrderedDict())
 	for k, v in table[src].items():
 		table[dst][k] = v
 
@@ -106,7 +86,7 @@ def mod_tabledata(tabledata):
 
 	# construct icon object
 	iconid = len(itemtable['m_pItemIconData'])
-	itemtable['m_pItemIconData'].append(FFOrderedDict(0))
+	itemtable['m_pItemIconData'].append(FFOrderedDict())
 
 	itemtable['m_pItemIconData'][iconid]['m_iIconType'] = 3
 	itemtable['m_pItemIconData'][iconid]['m_iIconNumber'] = iconnum
@@ -118,38 +98,12 @@ def mod_tabledata(tabledata):
 	
 	return iconnum
 
-def mod_texture(asset, img, load_path, name, templ_pathid, comp='dxt1'):
-	path_id = max(asset.objects.keys()) + 1
+def mod_texture(asset, imgpath, load_path, name, templ_pathid, comp='dxt1'):
+	obj = asset.add_object(28)
+	import_texture(obj._contents, imgpath, name, comp)
+	ab_ent = asset.add2ab(load_path, obj.path_id)
 
-	# construct texture object
-	obj = ObjectInfo(asset)
-
-	obj.path_id = path_id
-	obj.type_id = 28
-	obj.class_id = 28
-	obj.is_destroyed = False
-
-	obj._contents = Texture2D(FFOrderedDict(0))
-	for k, v in asset.objects[templ_pathid].contents._obj.items():
-		obj._contents._obj[k] = v
-
-	asset.objects[path_id] = obj
-
-	# load image
-	obj._contents.name = name
-	obj._contents.height = img.height
-	obj._contents.width = img.width
-	# DXT1 or DXT5
-	obj._contents.format = 12 if comp == 'dxt5' else 10
-
-	img.flip()
-	# load image as DDS, stripping 128-byte header
-	obj._contents.data = img.make_blob(comp)[128:]
-
-	ab_index, preload_index = add2assetbundle(asset, load_path, path_id)
-
-	print('inserted texture.\n\tpath_id: {}, ab_index: {}, preloadIndex: {}'
-		.format(path_id, ab_index, preload_index))
+	print('inserted texture.\n\tpath_id: {}'.format(obj.path_id))
 
 def main():
 	print('inserting {}...'.format(ITEM_NAME))
@@ -163,8 +117,6 @@ def main():
 		with open(TABLEDATA_PATH + '_new', 'wb') as outf:
 			tabledata.save(outf)
 	
-	texture = Image(filename=ITEM_TEXTURE_PATH)
-	icon = Image(filename=ITEM_ICON_PATH)
 	icon_name = 'cosicon_{}'.format(iconnum)
 	icon_path = 'icons/{}.png'.format(icon_name)
 
@@ -174,7 +126,7 @@ def main():
 	with open(CHARTEX_PATH, 'rb') as f:
 		chartex = Asset.from_file(f)
 
-		mod_texture(chartex, texture, 'texture/' + ITEM_TEXTURE_NAME + '.dds',
+		mod_texture(chartex, ITEM_TEXTURE_PATH, 'texture/' + ITEM_TEXTURE_NAME + '.dds',
 			ITEM_TEXTURE_NAME, TEMPL_TEXTURE_PATHID)
 
 		with open(CHARTEX_PATH + '_new', 'wb') as outf:
@@ -184,7 +136,7 @@ def main():
 	with open(ICONS_PATH, 'rb') as f:
 		icons = Asset.from_file(f)
 
-		mod_texture(icons, icon, icon_path, icon_name, TEMPL_ICON_PATHID, 'dxt5')
+		mod_texture(icons, ITEM_ICON_PATH, icon_path, icon_name, TEMPL_ICON_PATHID, 'dxt5')
 
 		with open(ICONS_PATH + '_new', 'wb') as outf:
 			icons.save(outf)

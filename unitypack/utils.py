@@ -43,6 +43,38 @@ def extract_audioclip_samples(d) -> dict:
 	return ret
 
 
+class BitReader:
+        def __init__(self, buf, size):
+                self.buf = buf
+                self.size = size
+
+                self.bitcount = 8
+                self.i = 0
+                self.byte = self.nextbyte()
+
+        def nextbyte(self):
+                if self.i >= len(self.buf):
+                        return 0
+                b = self.buf[self.i]
+                self.i += 1
+                return b
+
+        def read(self):
+                if self.size == 8 and self.bitcount == 0:
+                        return self.nextbyte()
+
+                while self.bitcount < self.size:
+                        newbyte = self.nextbyte()
+                        # XXX: not sure why disunity has a special case for -1 here
+                        self.byte |= newbyte << self.bitcount
+                        self.bitcount += 8
+
+                ret = self.byte & ((1 << self.size) - 1)
+                self.byte >>= self.size
+                self.bitcount -= self.size
+                return ret
+
+
 class BinaryReader:
 	def __init__(self, buf, endian="<"):
 		self.buf = buf

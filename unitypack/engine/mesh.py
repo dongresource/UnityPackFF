@@ -5,6 +5,7 @@ from .object import Object, field
 class Mesh(Object):
 	usage_flags = field("m_MeshUsageFlags")
 	keep_indices = field("m_KeepIndices")
+	use_16bit_indices = field("m_Use16BitIndices")
 	baked_convex_collision_mesh = field("m_BakedConvexCollisionMesh")
 	baked_triangle_collision_mesh = field("m_BakedTriangleCollisionMesh")
 	compressed_mesh = field("m_CompressedMesh")
@@ -19,6 +20,9 @@ class Mesh(Object):
 	submeshes = field("m_SubMeshes")
 	keep_vertices = field("m_KeepVertices")
 	index_buffer = field("m_IndexBuffer")
+	vertices = field("m_Vertices")
+	uvs = field("m_UV")
+	normals = field("m_Normals")
 	vertex_data = field("m_VertexData")
 
 
@@ -28,6 +32,8 @@ class SubMesh(Object):
 	index_count = field("indexCount")
 	localAABB = field("localAABB")
 	topology = field("topology")
+	is_tri_strip = field("isTriStrip")
+	triangle_count = field("triangleCount")
 	vertex_count = field("vertexCount")
 
 

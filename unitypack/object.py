@@ -328,7 +328,7 @@ class ObjectInfo:
 			if type.is_array:
 				first_child = type
 
-			if t.startswith("Ptr<"):
+			if t.startswith("PPtr<"):
 				result = None
 
 			elif first_child and first_child.is_array:

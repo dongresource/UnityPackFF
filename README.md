@@ -37,7 +37,7 @@ $ sudo python3 setup.py develop
 
 This places only a reference into your system's package directory as opposed to copying the entire library into a directory that isn't user-writable.
 This way you can keep modifying the code in your repository directory without having to reinstall the entire thing after every change.
-Note that this doesn't seem to work on Windows if Python was installed from the Microsoft Store, and that even with this system, the scripts in `bin/` are still copied whole into the system's Python script directory, so changes to them will still need to be propagated by re-invoking `setup.py` if you wish to use them without specifying their location.
+Note that this doesn't seem to work on Windows if Python was installed from the Microsoft Store.
 Another option is to just set the `PYTHONPATH` environment variable to this directory.
 
 Current features:

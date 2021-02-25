@@ -4,6 +4,7 @@ from wand.image import Image
 from .utils import BinaryWriter
 from .object import FFOrderedDict
 from .engine.object import Object
+from .engine.mesh import SubMesh
 
 
 def import_audio(obj, audiopath, length, name=None, freq=44100):
@@ -36,18 +37,24 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 
 	img.flip()
 
+	# HACK: ImageMagick apparently thinks it knows better than you and will
+	# give you a DXT1 if there's no transparency *even if you ask for DXT5*
+	buf = img.make_blob(fmt)
+	if chr(buf[87]) == '1':
+		obj.format = 10 # DXT1
+
 	# load image as DDS, stripping 128-byte header
-	obj.data = img.make_blob(fmt)[128:]
+	obj.data = buf[128:]
 	obj.complete_image_size = len(obj.data)
 
-        # these are all the same across all Texture2Ds in CharTexture and Icons
+	# these are all the same across all Texture2Ds in CharTexture and Icons
 	# but only m_TextureDimension = 2 seems to be mandatory
 	obj._obj['m_Limit'] = -1
 	obj._obj['m_TextureDimension'] = 2
 	obj._obj['m_TextureSettings']['m_FilterMode'] = 1
 	obj._obj['m_TextureSettings']['m_Aniso'] = 1
-	obj._obj['m_MipBias'] = 0.0
-	obj._obj['m_WrapMode'] = 0
+	obj._obj['m_TextureSettings']['m_MipBias'] = 0.0
+	obj._obj['m_TextureSettings']['m_WrapMode'] = 0
 
 def import_mesh(obj, meshpath, name=None):
 	if not isinstance(obj, Object):

@@ -109,22 +109,26 @@ class ObjectInfo:
 
 	@property
 	def contents(self):
-		# TODO: decide if this is the API we want
+		"Memoized object. Is read from disk if necessary."
+
 		if self._contents is None:
-			return self._read()
+			self._contents = self._read()
 		return self._contents
 
 	def read(self):
+		"Return object if memoized, otherwise read it from disk without memoizing it"
+
 		if self._contents is None:
 			return self._read()
 		return self._contents
 
 	def _read(self):
+		"Read object without memoizing it"
+
 		buf = self.asset._buf
 		buf.seek(self.asset._buf_ofs + self.data_offset)
 		object_buf = buf.read(self.size)
-		self._contents = self.read_value(self.type_tree, BinaryReader(BytesIO(object_buf)))
-		return self._contents
+		return self.read_value(self.type_tree, BinaryReader(BytesIO(object_buf)))
 
 	def read_value(self, type, buf):
 		align = False
@@ -214,12 +218,14 @@ class ObjectInfo:
 			return self.asset.get_asset(path)
 
 	def save_data(self, buf):
-		# ensure the object has been read before we change data_offset
-		self.contents
+		# We avoid saving the object's contents in self._contents,
+		# since that can cause the program to take up gigabytes of
+		# memory after having saved a large asset bundle.
+		contents = self.read()
 
 		object_buf = BytesIO()
 		self.data_offset = buf.tell()
-		self.write_value(self.type_tree, BinaryWriter(object_buf), self.contents)
+		self.write_value(self.type_tree, BinaryWriter(object_buf), contents)
 
 		object_data = object_buf.getvalue()
 		self.size = len(object_data)

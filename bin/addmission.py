@@ -350,7 +350,8 @@ def main(tabledata):
 
 		journalId = createJournalEntry(taskInfo['taskDesc'])
 		mission['m_iSTJournalIDAdd'] = journalId
-		mission['m_iSUJournalIDAdd'] = journalId # NOTE in some missions these are different? but it's a pretty useless thing
+		mission['m_iSUJournaliDAdd'] = journalId # NOTE in some missions these are different? but it's a pretty useless thing
+
 		
 		# TODO implement task type 6 - escorts
 		if taskInfo['taskType'] == 1 or taskInfo['taskType'] == 3 or taskInfo['taskType'] == 4: 

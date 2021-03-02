@@ -67,7 +67,8 @@ TASK_DATA = [
 		'objective': 'Go to Pokey Oaks Mall.',
 		'taskDesc': 'Investigate the area in Pokey Oaks and see if you can get a clue of what\'s going on.',
 		'initialMessage': {
-			'type': 2,
+			'type': 2, # Message types - 2: popup 4: email 6: both
+
 			'text': 'My readings show an increasing concentration of Fusion Matter near the Pokey Oaks mall. Perhaps this is what we are looking for.',
 			'npc': 776,
 		},
@@ -309,7 +310,8 @@ def main(tabledata):
 		mission['m_iHCurrentObjective'] = createMissionString(taskInfo['objective'])
 
 		if 'initialMessage' in taskInfo:
-			mission['m_iSTMessageType'] = 2
+			mission['m_iSTMessageType'] = taskInfo['initialMessage']['type']
+
 			mission['m_iSTMessageTextID'] = createMissionString(taskInfo['initialMessage']['text'])
 			mission['m_iSTMessageSendNPC'] = taskInfo['initialMessage']['npc']
 
@@ -318,7 +320,8 @@ def main(tabledata):
 			mission['m_iSTDialogBubbleNPCID'] = taskInfo['initialDialog']['npc']
 		
 		if 'successMessage' in taskInfo:
-			mission['m_iSUMessageType'] = 2
+			mission['m_iSUMessageType'] = taskInfo['successMessage']['type']
+
 			mission['m_iSUMessagetextID'] = createMissionString(taskInfo['successMessage']['text']) # lowercase t 🙄
 			mission['m_iSUMessageSendNPC'] = taskInfo['successMessage']['npc']
 

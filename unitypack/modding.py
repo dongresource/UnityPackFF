@@ -26,25 +26,38 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 		raise ValueError('Invalid target object')
 
 	img = Image(filename=imgpath)
+	img.flip()
 
 	if name is not None:
 		obj.name = name
 	obj.height = img.height
 	obj.width = img.width
-	# DXT1 or DXT5
-	obj.format = 12 if fmt == 'dxt5' else 10
 	obj.image_count = 1
 
-	img.flip()
-
-	# HACK: ImageMagick apparently thinks it knows better than you and will
-	# give you a DXT1 if there's no transparency *even if you ask for DXT5*
-	buf = img.make_blob(fmt)
-	if chr(buf[87]) == '1':
-		obj.format = 10 # DXT1
-
-	# load image as DDS, stripping 128-byte header
-	obj.data = buf[128:]
+	if fmt == 'dxt1':
+		buf = img.make_blob("dxt1")
+		obj.format = 10
+	elif fmt == 'dxt5':
+		obj.format = 12
+		# HACK: ImageMagick apparently thinks it knows better than you and will
+		# give you a DXT1 if there's no transparency *even if you ask for DXT5*
+		buf = img.make_blob("dxt5")
+		if chr(buf[87]) == '1':
+			obj.format = 10 # DXT1
+	elif fmt == 'rgb24':
+		buf = img.make_blob("rgb")
+		obj.format = 3
+	elif fmt == 'rgba32':
+		buf = img.make_blob("rgba")
+		obj.format = 4
+	else:
+		raise ValueError('Invalid format specified')
+	
+	if fmt == 'dxt1' or fmt == 'dxt5':
+		# load image as DDS, stripping 128-byte header
+		obj.data = buf[128:]
+	else:
+		obj.data = buf
 	obj.complete_image_size = len(obj.data)
 
 	# these are all the same across all Texture2Ds in CharTexture and Icons

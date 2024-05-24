@@ -23,6 +23,7 @@ class RuntimePlatform(IntEnum):
 	OSXWebPlayer = 3
 	OSXDashboardPlayer = 4
 	WindowsWebPlayer = 5
+	WiiPlayer = 6
 	WindowsEditor = 7
 	IPhonePlayer = 8
 	PS3 = 9

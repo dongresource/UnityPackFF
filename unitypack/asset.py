@@ -247,7 +247,7 @@ class Asset:
 
 		obj.path_id = self.next_path_id()
 		obj.type_id = type_id
-		obj.class_id = type_id
+		obj.class_id = type_id if type_id >= 0 else 114
 		obj.is_destroyed = False
 
 		# populate all fields with their respective null values

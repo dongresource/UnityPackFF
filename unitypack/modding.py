@@ -10,12 +10,17 @@ from .engine.mesh import SubMesh
 def import_audio(obj, audiopath, length, name=None, freq=44100):
 	if not isinstance(obj, Object):
 		raise ValueError('Invalid target object')
+	if not audiopath.endswith(".ogg"):
+		raise ValueError('Only OGG Vorbis is supported')
 
 	with open(audiopath, 'rb') as f:
 		obj.audio_data = f.read()
-	obj.size = len(obj.audio_data)
 	obj.length = length # in seconds; float
 	obj.frequency = freq
+
+	obj._obj['m_Format'] = 5
+	obj._obj['m_DecompressOnLoad'] = True
+	obj._obj['m_Size'] = len(obj.audio_data)
 
 	if name is not None:
 		obj.name = name

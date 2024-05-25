@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from unitypack.asset import Asset
 from unitypack.object import FFOrderedDict
 
@@ -48,7 +50,7 @@ QUEST_DON_DOOM_LEG = createQuestItem("Don Doom Leg")
 MISSION_NAME = 'Doom\'s Day'
 MISSION_TYPE = 3 # 1: guide 2: nano 3: world
 MISSION_DIFFICULTY = 2 # 0: easy 1: normal 2: hard
-REQUIRED_LEVEL = 4 
+REQUIRED_LEVEL = 4
 GIVER_ID = 776
 
 MISSION_DESCRIPTION_TEXT = 'I have heard report of one of Fuse\'s minions terrorizing Pokey Oaks. From what I hear, this is no regular monster... this is something bigger. Are you up to help me investigate?'
@@ -82,8 +84,8 @@ TASK_DATA = [
 		},
 
 		'taskType': 2,
-		'target': 1093, 
-		'waypoint': 1093, 
+		'target': 1093,
+		'waypoint': 1093,
 	},
 	{
 		'journalNPC': 776,
@@ -102,7 +104,7 @@ TASK_DATA = [
 		},
 
 		'taskType': 5,
-		# You need to specify the start items for mob drop tasks otherwise the popup for the mob not dropping an item will be blank. 
+		# You need to specify the start items for mob drop tasks otherwise the popup for the mob not dropping an item will be blank.
 		'startItems': {
 			'items': [QUEST_FUSION_SAMPLE],
 			'count': [0]
@@ -220,7 +222,7 @@ TASK_DATA = [
 			'items': [QUEST_DON_DOOM_LEG],
 			'count': [-1]
 		},
-		
+
 	},
 
 ]
@@ -245,7 +247,7 @@ def main(tabledata):
 	MISSION_COMPLETE_SUMMARY = createMissionString(MISSION_COMPLETE_SUMMARY_TEXT)
 	NPC_MISSION_COMPLETE_SUMMARY = createMissionString(NPC_MISSION_COMPLETE_SUMMARY_TEXT)
 	MISSION_SUMMARY = createMissionString(MISSION_SUMMARY_TEXT)
-	
+
 	def createJournalEntry(taskDesc):
 		entry = FFOrderedDict(0)
 		for k,v in journalData[0].items(): entry[k] = v
@@ -261,7 +263,7 @@ def main(tabledata):
 
 	# Create reward
 	reward = FFOrderedDict(0)
-	for k,v in rewardData[0].items(): 
+	for k,v in rewardData[0].items():
 		reward[k] = v
 		if isinstance(v, list):
 			reward[k] = [0] * len(v)
@@ -280,20 +282,20 @@ def main(tabledata):
 
 	maxMissionId = 0
 	for data in missionData:
-		if data['m_iHMissionID'] > maxMissionId: 
+		if data['m_iHMissionID'] > maxMissionId:
 			maxMissionId = data['m_iHMissionID']
 	missionId = maxMissionId + 1
 
 	maxTaskId = 0
 	for data in missionData:
-		if data['m_iHTaskID'] > maxTaskId: 
+		if data['m_iHTaskID'] > maxTaskId:
 			maxTaskId = data['m_iHTaskID']
 	maxTaskId = maxTaskId + 1
 
 	lastNonInstanceTask = maxTaskId
 
 	def addMissionData(mission, taskInfo):
-		for k,v in missionData[0].items(): 
+		for k,v in missionData[0].items():
 			mission[k] = v
 			if isinstance(v, list):
 				mission[k] = [0] * len(v)
@@ -318,7 +320,7 @@ def main(tabledata):
 		if 'initialDialog' in taskInfo:
 			mission['m_iSTDialogBubble'] = createMissionString(taskInfo['initialDialog']['text'])
 			mission['m_iSTDialogBubbleNPCID'] = taskInfo['initialDialog']['npc']
-		
+
 		if 'successMessage' in taskInfo:
 			mission['m_iSUMessageType'] = taskInfo['successMessage']['type']
 
@@ -328,7 +330,7 @@ def main(tabledata):
 		if 'successDialog' in taskInfo:
 			mission['m_iSUDialogBubble'] = createMissionString(taskInfo['successDialog']['text'])
 			mission['m_iSUDialogBubbleNPCID'] = taskInfo['successDialog']['npc']
-			
+
 		if 'startItems' in taskInfo:
 			for i in range(min(3, len(taskInfo['startItems']['items']))):
 				mission['m_iSTItemID'][i] = taskInfo['startItems']['items'][i]
@@ -355,16 +357,16 @@ def main(tabledata):
 		mission['m_iSTJournalIDAdd'] = journalId
 		mission['m_iSUJournaliDAdd'] = journalId # NOTE in some missions these are different? but it's a pretty useless thing
 
-		
+
 		# TODO implement task type 6 - escorts
-		if taskInfo['taskType'] == 1 or taskInfo['taskType'] == 3 or taskInfo['taskType'] == 4: 
+		if taskInfo['taskType'] == 1 or taskInfo['taskType'] == 3 or taskInfo['taskType'] == 4:
 			mission['m_iHTerminatorNPCID'] = taskInfo['targetNPC']
 			mission['m_iSTGrantWayPoint'] = taskInfo['targetNPC']
 		elif taskInfo['taskType'] == 2:
 			mission['m_iHTerminatorNPCID'] = taskInfo['target']
 			mission['m_iSTGrantWayPoint'] = taskInfo['waypoint'] # Different in the case of entering fusion lairs; waypoint is for portal but actual target is inside the lair
 		elif taskInfo['taskType'] == 5:
-			if 'mobCount' in taskInfo: 
+			if 'mobCount' in taskInfo:
 				for i in range(min(3, len(taskInfo['mobs']))):
 					mission['m_iCSUEnemyID'][i] = taskInfo['mobs'][i]
 					mission['m_iCSUNumToKill'][i] = taskInfo['mobCount'][i]
@@ -393,7 +395,7 @@ def main(tabledata):
 			addMissionData(failMission, taskInfo['failTask'])
 			maxTaskId = maxTaskId + 1 # Failure task will be next, all tasks after are pushed down an index
 			failMission['m_iHTaskID'] = maxTaskId + i
-			mission['m_iFOutgoingTask'] = maxTaskId + i 
+			mission['m_iFOutgoingTask'] = maxTaskId + i
 			failMission['m_iSUOutgoingTask'] = maxTaskId + i - 1 # Return to previous task, no +1 because maxTaskId was incremented
 			missionData.append(failMission)
 
@@ -403,9 +405,9 @@ def main(tabledata):
 				mission['m_iFOutgoingTask'] = lastNonInstanceTask
 		else:
 			lastNonInstanceTask = maxTaskId + i
-			
 
-		if i == 0: 
+
+		if i == 0:
 			mission['m_iHNPCID'] = GIVER_ID
 
 		if i == len(TASK_DATA) - 1:

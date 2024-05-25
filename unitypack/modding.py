@@ -26,7 +26,8 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 		raise ValueError('Invalid target object')
 
 	img = Image(filename=imgpath)
-	img.flip()
+	if fmt not in ('rgb16', 'rgba16'):
+		img.flip() # no need to flip BMPs it seems
 
 	if name is not None:
 		obj.name = name
@@ -44,9 +45,19 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 		buf = img.make_blob("dxt5")
 		if chr(buf[87]) == '1':
 			obj.format = 10 # DXT1
+	elif fmt == 'rgb16':
+		img.options["bmp:subtype"] = "RGB565"
+		img.type = "truecolor"
+		buf = img.make_blob("bmp")
+		obj.format = 7
 	elif fmt == 'rgb24':
 		buf = img.make_blob("rgb")
 		obj.format = 3
+	elif fmt == 'rgba16':
+		# well, Unity lists it in Editor and docs as RGBA, but alas it's ARGB
+		img.options["bmp:subtype"] = "ARGB4444" 
+		buf = img.make_blob("bmp")
+		obj.format = 2
 	elif fmt == 'rgba32':
 		buf = img.make_blob("rgba")
 		obj.format = 4
@@ -56,6 +67,9 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 	if fmt == 'dxt1' or fmt == 'dxt5':
 		# load image as DDS, stripping 128-byte header
 		obj.data = buf[128:]
+	elif fmt == 'rgb16' or fmt == 'rgba16':
+		# ditto, but for BMP and 138-byte header
+		obj.data = buf[138:]
 	else:
 		obj.data = buf
 	obj.complete_image_size = len(obj.data)

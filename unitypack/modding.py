@@ -85,6 +85,7 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 	obj._obj['m_TextureDimension'] = 2
 	obj._obj['m_TextureSettings']['m_FilterMode'] = 1
 	obj._obj['m_TextureSettings']['m_Aniso'] = 1
+	obj._obj['m_MipMap'] = False
 	obj._obj['m_TextureSettings']['m_MipBias'] = 0.0
 	obj._obj['m_TextureSettings']['m_WrapMode'] = 0
 

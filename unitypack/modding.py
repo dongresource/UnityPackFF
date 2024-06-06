@@ -14,7 +14,6 @@ def import_audio(obj, audiopath, length=None, name=None, freq=None):
 	if not audiopath.endswith(".ogg"):
 		raise ValueError('Only OGG Vorbis is supported')
 
-
 	tag = TinyTag.get(audiopath)
 	if length is None:
 		length = tag.duration
@@ -49,13 +48,17 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 	obj.image_count = 1
 
 	if fmt == 'dxt1':
-		buf = img.make_blob("dxt1")
 		obj.format = 10
+		img.options["dds:cluster-fit"] = "true"
+		img.options["dds:mipmaps"] = "0"
+		buf = img.make_blob("dxt1")
 	elif fmt == 'dxt5':
 		obj.format = 12
+		img.options["dds:cluster-fit"] = "true"
+		img.options["dds:mipmaps"] = "0"
+		buf = img.make_blob("dxt5")
 		# HACK: ImageMagick apparently thinks it knows better than you and will
 		# give you a DXT1 if there's no transparency *even if you ask for DXT5*
-		buf = img.make_blob("dxt5")
 		if chr(buf[87]) == '1':
 			obj.format = 10 # DXT1
 	elif fmt == 'rgb16':

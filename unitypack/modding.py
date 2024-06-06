@@ -1,4 +1,5 @@
 from io import BytesIO
+from tinytag import TinyTag
 from wand.image import Image
 
 from .utils import BinaryWriter
@@ -7,20 +8,18 @@ from .engine.object import Object
 from .engine.mesh import SubMesh
 
 
-def import_audio(obj, audiopath, length=None, name=None, freq=44100):
+def import_audio(obj, audiopath, length=None, name=None, freq=None):
 	if not isinstance(obj, Object):
 		raise ValueError('Invalid target object')
 	if not audiopath.endswith(".ogg"):
 		raise ValueError('Only OGG Vorbis is supported')
 
+
+	tag = TinyTag.get(audiopath)
 	if length is None:
-		try:
-			from tinytag import TinyTag
-			tag = TinyTag.get(audiopath)
-			length = tag.duration
-			freq = tag.samplerate
-		except ImportError:
-			raise ValueError('You must specify a length or install tinytag to automatically determine it')
+		length = tag.duration
+	if freq is None:
+		freq = tag.samplerate
 
 	with open(audiopath, 'rb') as f:
 		obj.audio_data = f.read()

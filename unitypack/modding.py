@@ -33,7 +33,7 @@ def import_audio(obj, audiopath, length=None, name=None, freq=None):
 		obj.name = name
 
 
-def import_texture(obj, imgpath, name=None, fmt='dxt1'):
+def import_texture(obj, imgpath, name=None, fmt='dxt1', clamp=False):
 	if not isinstance(obj, Object):
 		raise ValueError('Invalid target object')
 
@@ -98,7 +98,7 @@ def import_texture(obj, imgpath, name=None, fmt='dxt1'):
 	obj._obj['m_TextureSettings']['m_Aniso'] = 1
 	obj._obj['m_MipMap'] = False
 	obj._obj['m_TextureSettings']['m_MipBias'] = 0.0
-	obj._obj['m_TextureSettings']['m_WrapMode'] = 0
+	obj._obj['m_TextureSettings']['m_WrapMode'] = 1 if clamp else 0
 
 def import_mesh(obj, meshpath, name=None):
 	if not isinstance(obj, Object):

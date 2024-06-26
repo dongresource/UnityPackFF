@@ -265,7 +265,7 @@ class Asset:
 
 		ab = self.objects[1].contents
 		ab_index = len(ab['m_Container'])
-		preload_index = max([x[1]['preloadIndex'] for x in ab['m_Container']]) + 1
+		preload_index = len(ab['m_PreloadTable'])
 
 		ptr = ObjectPointer(None, self) # type argument is unused
 		ptr.file_id = file_id

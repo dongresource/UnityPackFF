@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unitypack"
+version = "0.8.1"
+description = "Python implementation of the .unity3d format"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{name = "Jerome Leclanche", email = "jerome@leclan.ch"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+]
+dependencies = [
+    "fsb5",
+    "lz4",
+    "Pillow",
+    "tinytag",
+    "wand",
+]
+
+[project.urls]
+Homepage = "https://github.com/HearthSim/UnityPack"
+Download = "https://github.com/HearthSim/UnityPack/tarball/master"
+
+[tool.setuptools]
+script-files = [
+    "bin/additem.py",
+    "bin/dump_terrain.py",
+    "bin/dumpxdt.py",
+    "bin/ffextract.py",
+    "bin/list_ab_alt.py",
+    "bin/list_assetbundle.py",
+    "bin/list_contents.py",
+    # bin/proto_extract.py
+    # bin/proto_mesh_extract.py
+    "bin/replace_mesh.py",
+    "bin/replace_terrain.py",
+    "bin/show_gameobject.py",
+    "bin/unity2yaml.py",
+    "bin/unityextract.py",
+]
+include-package-data = false
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools.package-data]
+unitypack = ["classes.json", "strings.dat", "structs.dat"]

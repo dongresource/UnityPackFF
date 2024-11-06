@@ -20,25 +20,26 @@ Note that this repository is a loose collection of patches and scripts I had ori
 Do read the scripts in `bin` before executing them to make sure you understand what they do.
 Tweaking them yourself is to be considered part of standard usage.
 
-I have not tested any of this on Windows myself, though it *should* all work just fine.
-
-Dependencies can be installed using `pip`, as usual:
+UnityPackFF and its dependencies can be easily installed with `pip`. It is recommended to add the editable flag `-e`, more about this below.
 
 ```
-$ sudo pip3 install -r requirements.txt
+$ sudo pip install -e . 
 ```
 
-The library itself can also be installed with `setup.py`, like most Python software.
-The recommended approach is to install the library in ["Development Mode"](https://setuptools.readthedocs.io/en/latest/userguide/development_mode.html), like so:
+The library can also be installed with via setuptool's `setup.py`.
+Again, the recommended approach is to keep the code editable by installing the library in ["Development Mode"](https://setuptools.readthedocs.io/en/latest/userguide/development_mode.html), like so:
 
 ```
-$ sudo python3 setup.py develop
+$ sudo pip install -r requirements.txt
+$ sudo python setup.py develop
 ```
 
-This places only a reference into your system's package directory as opposed to copying the entire library into a directory that isn't user-writable.
+Installing in editable/development mode places only a reference into your system's package directory as opposed to copying the entire library into a directory that isn't user-writable.
 This way you can keep modifying the code in your repository directory without having to reinstall the entire thing after every change.
-Note that this doesn't seem to work on Windows if Python was installed from the Microsoft Store.
-Another option is to just set the `PYTHONPATH` environment variable to this directory.
+
+Note that the setuptools method does not work on Windows if Python is installed from the Microsoft Store - it is recommended to install purely with pip in this case.
+
+Another option is to just set the `PYTHONPATH` environment variable to the directory of the repository.
 
 Current features:
 

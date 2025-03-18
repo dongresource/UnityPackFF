@@ -257,23 +257,31 @@ class Asset:
 
 		return obj
 
-	def add2ab(self, path, path_id, file_id=0):
+	def add2ab(self, path, path_id, file_id=0, preloads=None):
 		"Add a path -> ObjectPointer connection into the AssetBundle object"
 
 		if self.objects[1].type != 'AssetBundle':
 			raise ValueError('AssetBundle object not found. Is this a Scene bundle?')
 
 		ab = self.objects[1].contents
-		ab_index = len(ab['m_Container'])
 		preload_index = len(ab['m_PreloadTable'])
 
 		ptr = ObjectPointer(None, self) # type argument is unused
 		ptr.file_id = file_id
 		ptr.path_id = path_id
 
+		if preloads is None:
+			# assume that this is a single object preload, and add it to the table
+			# TODO: maybe we could also auto collect dependencies for gameobjects, etc.?
+			preload_size = 1
+			ab['m_PreloadTable'].append(ptr)
+		else:
+			preload_size = len(preloads)
+			ab['m_PreloadTable'] = ab['m_PreloadTable'] + preloads
+
 		abdata = FFOrderedDict()
 		abdata['preloadIndex'] = preload_index
-		abdata['preloadSize'] = 1
+		abdata['preloadSize'] = preload_size
 		abdata['asset'] = ptr
 
 		ret = (path, abdata)
